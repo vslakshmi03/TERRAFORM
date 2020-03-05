@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set -e
+
+
+if [ ! -d ~/.aws ]
+then
+    mkdir ~/.aws
+fi
+
+
+KST=(`aws sts assume-role --role-arn "${IAM_ROLE}" --region us-east-1 \
+                          --role-session-name "newventures-simplr-jenkins" \
+                          --query '[Credentials.AccessKeyId,Credentials.SecretAccessKey,Credentials.SessionToken]' \
+                          --output text`)
+
+echo "[profile ${JOB_NAME}-${BUILD_NUMBER}]" >> ~/.aws/config
+echo "aws_access_key_id=${KST[0]}" >> ~/.aws/config
+echo "aws_secret_access_key=${KST[1]}" >> ~/.aws/config
+echo "aws_session_token=${KST[2]}" >> ~/.aws/config
+
+export AWS_ACCESS_KEY_ID=${KST[0]}
+export AWS_SECRET_ACCESS_KEY=${KST[1]}
+export AWS_SESSION_TOKEN=${KST[2]}
+
+cat ~/.aws/config
+export AWS_PROFILE=${JOB_NAME}-${BUILD_NUMBER}
+
+ls -latr
+echo $region 
+echo $ami
+echo $subnet
+echo $sg
+pwd
+whoami
+curl http://169.254.169.254/latest/meta-data/local-ipv4
+cd /usr/local/src
+curl -O https://releases.hashicorp.com/terraform/0.12.1/terraform_0.12.1_linux_amd64.zip
+apt-get install -y unzip
+unzip terraform_0.12.1_linux_amd64.zip
+mv terraform /usr/local/bin/
+export PATH=$PATH:/terraform-path/
+terraform version
+
+
+cd /home/jenkins/workspace/AWS/Terraform_EC2_Provisioning
+
+terraform init  -backend-config="bucket=newventures-simplr-tfstatefiles" \
+			    -backend-config="region=$region" \
+                -backend-config="encrypt=true" \
+                -backend-config="key=newventures-simplr-dev-new/terraform.tfstate"
+                
+
+terraform plan -var="region=$region" -var="ami=$ami" -var="subnet=$subnet" -var="name=$name"\
+				-var="sg=$sg" -var="cluster_name=$cluster_name" -var="pem_key=$pem_key"
+
+echo yes | terraform apply -var="region=$region" -var="ami=$ami" -var="subnet=$subnet" -var="name=$name" \
+				-var="sg=$sg" -var="cluster_name=$cluster_name" -var="pem_key=$pem_key"
