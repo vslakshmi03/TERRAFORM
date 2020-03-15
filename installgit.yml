@@ -1,0 +1,11 @@
+---
+-
+  become: true
+  hosts: localhost
+  name: "Install git"
+  tasks:
+    -
+      name: "Install git"
+      yum:
+        name: git
+        state: latest

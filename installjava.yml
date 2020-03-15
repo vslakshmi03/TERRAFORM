@@ -1,0 +1,10 @@
+---
+- name: Install java
+  hosts: localhost
+  become: true
+
+  tasks:
+  - name: Install java
+    yum:
+      name: java-1.8.0
+      state: present
