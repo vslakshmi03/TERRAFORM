@@ -7,5 +7,5 @@ print(dicts)
 #new = dict((v, k) for k, v in dicts.iteritems())
 new = dict(map(reversed, dicts.items()))
 print(new)
-#reverse = {value: key for key, value in dicts.iteritems()}
-#print(reverse)
+test = dicts.pop('name', None)
+print(dicts)
